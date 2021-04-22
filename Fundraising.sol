@@ -17,5 +17,20 @@ contract FundRaising {
             goal = _goal;
         }
 
+        function contribute() public payable {
+            require(block.timestamp < deadline);
+            require(msg.value >= minContribution);
+            if(contributors[msg.sender] == 0) {
+                numOfContributors++;
+            }
+            contributors[msg.sender] += msg.value;
+            raisedAmount += msg.value;
+            if(raisedAmount >= goal) {
 
+            }
+        }
+
+        function getBalance() public view returns(uint) {
+            return address(this).balance;
+        }
 }
