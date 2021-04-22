@@ -12,14 +12,18 @@ contract FundRaising {
 
         struct Request {
             string description;
-            address recipient;
+            address payable recipient;
             uint value;
             bool completed;
             uint numOfVoters;
 
         }
          mapping(address => bool)  voters;
+
         Request[] public requests;
+        event ContributeEvent(address sender, uint value);
+        event CreateRequestEvent(string  _description, address _recipient, uint _value);
+        event MakePaymentEvent(address recipient, uint value);
         constructor(uint _goal, uint _deadline) {
             admin = msg.sender;
             numOfContributors = 0;
@@ -44,6 +48,7 @@ contract FundRaising {
             if(raisedAmount >= goal) {
 
             }
+            emit ContributeEvent(msg.sender, msg.value);
         }
 
         function getBalance() public view returns(uint) {
@@ -60,9 +65,10 @@ contract FundRaising {
             recipient.transfer(value);
             contributors[msg.sender] = 0;
 
+
         }
 
-        function createRequest(string memory _description, address _recipient, uint _value) public onlyAdmin {
+        function createRequest(string memory _description, address payable _recipient, uint _value) public onlyAdmin {
             Request memory newRequest =  Request({
                 description: _description,
                 recipient: _recipient,
@@ -71,5 +77,25 @@ contract FundRaising {
                 numOfVoters: 0
             });
             requests.push(newRequest);
+            emit CreateRequestEvent(_description, _recipient, _value);
+        }
+
+        function voteRequest(uint index) public {
+            Request storage thisRequest = requests[index];
+
+            require(contributors[msg.sender] > 0);
+            require(voters[msg.sender] == false);
+
+            voters[msg.sender] = true;
+            thisRequest.numOfVoters++;
+        }
+
+        function makePayment(uint index) public onlyAdmin {
+            Request storage request = requests[index];
+            require(request.completed == false);
+            require(request.numOfVoters > numOfContributors / 2);
+            request.recipient.transfer(request.value);
+            request.completed = true;
+            emit MakePaymentEvent(request.recipient, request.value);
         }
 }
